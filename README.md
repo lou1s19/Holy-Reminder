@@ -2,11 +2,9 @@
 
 Eine minimalistische macOS Menu Bar App für tägliche Bibelerinnerungen.
 
-<p align="center">
-  <img src="screenshots/menu.png" width="300" alt="Menu">
-  <img src="screenshots/laune-aussuchen.jpeg" width="300" alt="Stimmung wählen">
-  <img src="screenshots/einzelansicht-vers.jpeg" width="300" alt="Vers Ansicht">
-</p>
+| Menu | Stimmung wählen | Vers Ansicht |
+|:---:|:---:|:---:|
+| <img src="screenshots/menu.png" width="200"> | <img src="screenshots/laune-aussuchen.jpeg" width="200"> | <img src="screenshots/einzelansicht-vers.jpeg" width="200"> |
 
 ## ✨ Features
 
