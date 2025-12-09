@@ -26,7 +26,7 @@ Eine minimalistische macOS Menu Bar App für tägliche Bibelerinnerungen.
 ### Option 2: Homebrew
 ```bash
 brew tap lou1s19/holy-reminder
-brew install holy-reminder
+brew install --cask holy-reminder
 ```
 
 ### Option 3: Aus dem Quellcode bauen
