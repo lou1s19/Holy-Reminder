@@ -21,7 +21,9 @@ Eine minimalistische macOS Menu Bar App für tägliche Bibelerinnerungen.
 1. Lade die neueste Version von der [Releases](../../releases) Seite herunter
 2. Entpacke die ZIP-Datei
 3. Ziehe "Holy Reminder" in den Applications Ordner
-4. Starte die App aus dem Applications Ordner
+4. **Beim ersten Start:** Rechtsklick auf die App → "Öffnen" → "Öffnen" bestätigen
+
+> ⚠️ **Hinweis:** Da die App nicht im App Store ist, zeigt macOS eine Warnung. Das ist normal! Alternativ: Systemeinstellungen → Datenschutz & Sicherheit → "Trotzdem öffnen"
 
 ### Option 2: Homebrew
 ```bash
