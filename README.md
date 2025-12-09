@@ -2,7 +2,11 @@
 
 Eine minimalistische macOS Menu Bar App für tägliche Bibelerinnerungen.
 
-![Holy Reminder Screenshot](screenshots/menu.png)
+<p align="center">
+  <img src="screenshots/menu.png" width="300" alt="Menu">
+  <img src="screenshots/laune-aussuchen.jpeg" width="300" alt="Stimmung wählen">
+  <img src="screenshots/einzelansicht-vers.jpeg" width="300" alt="Vers Ansicht">
+</p>
 
 ## ✨ Features
 
@@ -17,16 +21,11 @@ Eine minimalistische macOS Menu Bar App für tägliche Bibelerinnerungen.
 
 ### Option 1: Download (Empfohlen)
 1. Lade die neueste Version von der [Releases](../../releases) Seite herunter
-2. Öffne die `.dmg` Datei
+2. Entpacke die ZIP-Datei
 3. Ziehe "Holy Reminder" in den Applications Ordner
 4. Starte die App aus dem Applications Ordner
 
-### Option 2: Homebrew (Coming Soon)
-```bash
-brew install --cask holy-reminder
-```
-
-### Option 3: Aus dem Quellcode bauen
+### Option 2: Aus dem Quellcode bauen
 ```bash
 git clone https://github.com/lou1s19/Holy-Reminder.git
 cd Holy-Reminder
@@ -45,6 +44,13 @@ swift build -c release
 - **Allgemein**: Bei Anmeldung starten, Stimmung ändern
 - **Aussehen**: Wähle dein Menüleisten-Icon
 - **Erinnerungen**: Häufigkeit, Stille Zeiten, Gebetserinnerungen
+
+## 💬 Feedback & Wünsche
+
+Hast du Verbesserungsvorschläge oder hast einen Bug gefunden?
+
+- 📝 **[Neues Issue erstellen](../../issues/new)** - Für Bugs und Feature-Wünsche
+- 💡 **[Alle Issues ansehen](../../issues)** - Schau was andere vorgeschlagen haben
 
 ## 🤝 Unterstützen
 
