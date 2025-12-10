@@ -28,8 +28,32 @@ class NotificationManager {
     
     @objc private func handleWake() {
         print("☀️ System woke up, checking notifications...")
-        // If timer became invalid or time passed, reschedule
-        if isRunning {
+        
+        guard isRunning else { return }
+        
+        // Invalidate current timer as it might be unreliable after sleep
+        timer?.invalidate()
+        
+        if let targetDate = AppState.shared.nextReminderTime {
+            let now = Date()
+            let remaining = targetDate.timeIntervalSince(now)
+            
+            if remaining <= 0 {
+                // Time passed while sleeping
+                print("⏰ Time passed during sleep. Sending notification now.")
+                // Add a small delay to ensure system is fully awake and ready
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.sendNotificationIfAppropriate()
+                }
+            } else {
+                // Still time remaining
+                print("⏰ Rescheduling for remaining time: \(Int(remaining))s")
+                timer = Timer.scheduledTimer(withTimeInterval: remaining, repeats: false) { [weak self] _ in
+                    self?.sendNotificationIfAppropriate()
+                }
+            }
+        } else {
+            // Fallback if no time set
             rescheduleNotifications()
         }
     }
