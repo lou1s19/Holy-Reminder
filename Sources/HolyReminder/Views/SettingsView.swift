@@ -307,6 +307,8 @@ struct NotificationSettingsView: View {
 
 // MARK: - About View
 struct AboutView: View {
+    @EnvironmentObject var appState: AppState
+    
     var body: some View {
         VStack(spacing: 20) {
             Spacer()
@@ -337,6 +339,56 @@ struct AboutView: View {
                 .frame(width: 200)
             
             VStack(spacing: 12) {
+                // Update Checker Section
+                if let update = UpdateManager.shared.availableUpdate {
+                    VStack(spacing: 8) {
+                        Text("🚀 Neues Update verfügbar: \(update.version)")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.green)
+                        
+                        Link("Jetzt herunterladen", destination: update.url)
+                            .font(.system(size: 12))
+                            .buttonStyle(.borderedProminent)
+                        
+                        Text(update.changelog)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .padding()
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(8)
+                } else {
+                    Button(action: {
+                        UpdateManager.shared.checkForUpdates(manual: true)
+                    }) {
+                        if UpdateManager.shared.isChecking {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text("Nach Updates suchen")
+                        }
+                    }
+                    .disabled(UpdateManager.shared.isChecking)
+                    
+                    if let error = UpdateManager.shared.lastError {
+                        Text(error)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.red)
+                    }
+                }
+                
+                Divider()
+                    .frame(width: 200)
+                
+                Toggle("Automatisch nach Updates suchen", isOn: $appState.checkForUpdates)
+                    .font(.system(size: 11))
+                    .controlSize(.small)
+                
+                Spacer().frame(height: 10)
+                
                 Text("Mit ❤️ erstellt")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
@@ -378,6 +430,11 @@ struct AboutView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onReceive(UpdateManager.shared.$availableUpdate) { update in
+            if update != nil {
+                appState.availableUpdate = update
+            }
+        }
     }
     
     private func resetAllSettings() {

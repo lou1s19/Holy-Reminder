@@ -19,10 +19,12 @@ class AppState: ObservableObject {
     @AppStorage("notificationSoundEnabled") var notificationSoundEnabled: Bool = true
     @AppStorage("showVersePreview") var showVersePreview: Bool = true
     @AppStorage("askMoodDaily") var askMoodDaily: Bool = true
+    @AppStorage("checkForUpdates") var checkForUpdates: Bool = true // New setting
     
     @Published var currentVerse: BibleVerse?
     @Published var nextReminderTime: Date?
     @Published var showMoodSelection: Bool = false
+    @Published var availableUpdate: UpdateInfo? // Holds update info if found
     
     var lastMoodDate: Date? {
         get {

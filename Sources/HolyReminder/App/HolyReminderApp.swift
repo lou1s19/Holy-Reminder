@@ -54,6 +54,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         
         // Start notification scheduler
         NotificationManager.shared.startScheduler()
+        
+        // Check for updates if enabled
+        if AppState.shared.checkForUpdates {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                UpdateManager.shared.checkForUpdates()
+            }
+        }
     }
     
     func applicationWillTerminate(_ notification: Notification) {
@@ -61,10 +68,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
     
     private func checkAndShowMoodSelection() {
-        let lastMoodDate = UserDefaults.standard.object(forKey: "lastMoodDate") as? Date
+        // Use AppState to get the date safely (handles String/Date conversion from AppStorage)
+        let lastMoodDate = AppState.shared.lastMoodDate
         let calendar = Calendar.current
         
+        // If never set or not set today, show window
         if lastMoodDate == nil || !calendar.isDateInToday(lastMoodDate!) {
+            print("👋 Mood not set today, showing selection window")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "mood-selection" }) {
                     window.makeKeyAndOrderFront(nil)
@@ -74,7 +84,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
                     NSApp.sendAction(Selector(("showMoodWindow:")), to: nil, from: nil)
                 }
             }
+        } else {
+            print("✅ Mood already set today: \(lastMoodDateString(lastMoodDate))")
         }
+    }
+    
+    private func lastMoodDateString(_ date: Date?) -> String {
+        guard let date = date else { return "nil" }
+        return ISO8601DateFormatter().string(from: date)
     }
     
     // Handle notification when app is in foreground

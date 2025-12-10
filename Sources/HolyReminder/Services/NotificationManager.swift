@@ -1,5 +1,6 @@
 import Foundation
 import UserNotifications
+import AppKit // For NSWorkspace
 
 class NotificationManager {
     static let shared = NotificationManager()
@@ -9,6 +10,28 @@ class NotificationManager {
     
     private init() {
         setupNotificationCategories()
+        setupWakeObserver()
+    }
+    
+    deinit {
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
+    }
+    
+    private func setupWakeObserver() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(handleWake),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
+    }
+    
+    @objc private func handleWake() {
+        print("☀️ System woke up, checking notifications...")
+        // If timer became invalid or time passed, reschedule
+        if isRunning {
+            rescheduleNotifications()
+        }
     }
     
     private func setupNotificationCategories() {
@@ -125,6 +148,7 @@ class NotificationManager {
             "category": verse.category
         ]
         
+        // Use a safe identifier
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
