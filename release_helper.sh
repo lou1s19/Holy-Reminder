@@ -77,7 +77,17 @@ cp "Sources/HolyReminder/Resources/verses.json" "$RESOURCE_BUNDLE/"
 # OR put the bundle in Contents/Resources.
 # A common trick for SPM apps is to create the bundle structure inside Resources.
 
-# 6. Zip It
+# 6. Sign the App
+echo "🔐 Signing App Bundle..."
+xattr -cr "${OUTPUT_DIR}/${APP_BUNDLE}"
+codesign --force --deep --sign - "${OUTPUT_DIR}/${APP_BUNDLE}"
+
+if [ $? -ne 0 ]; then
+    echo "❌ Code signing failed."
+    exit 1
+fi
+
+# 7. Zip It
 echo "🤐 Zipping..."
 cd "${OUTPUT_DIR}"
 zip -r "${APP_NAME}.zip" "${APP_BUNDLE}" > /dev/null
