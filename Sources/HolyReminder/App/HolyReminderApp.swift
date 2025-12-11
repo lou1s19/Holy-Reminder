@@ -31,6 +31,15 @@ struct HolyReminderApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultPosition(.center)
+        
+        // Tutorial Window (shown on very first launch)
+        WindowGroup(id: "tutorial") {
+            TutorialView()
+                .environmentObject(appState)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }
 
@@ -49,8 +58,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // Set delegate for handling notifications
         UNUserNotificationCenter.current().delegate = self
         
-        // Check if mood was selected today
-        checkAndShowMoodSelection()
+        // Check if this is first launch - show tutorial
+        let tutorialCompleted = UserDefaults.standard.bool(forKey: "tutorialCompleted")
+        if !tutorialCompleted {
+            showTutorial()
+        } else {
+            // Check if mood was selected today
+            checkAndShowMoodSelection()
+        }
         
         // Start notification scheduler
         NotificationManager.shared.startScheduler()
@@ -65,6 +80,22 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     
     func applicationWillTerminate(_ notification: Notification) {
         NotificationManager.shared.stopScheduler()
+    }
+    
+    // Prevent app from terminating when last window closes (e.g., after Amen)
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        return false
+    }
+    
+    private func showTutorial() {
+        print("📖 First launch, showing tutorial...")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.contains("tutorial") == true }) {
+                window.level = .floating
+                window.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
     }
     
     private func checkAndShowMoodSelection() {

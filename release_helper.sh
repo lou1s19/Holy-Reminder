@@ -87,13 +87,37 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 7. Zip It
-echo "🤐 Zipping..."
+# 7. Create DMG
+echo "📀 Creating DMG..."
 cd "${OUTPUT_DIR}"
+
+# Create a temporary folder for DMG contents
+DMG_TEMP="dmg_temp"
+rm -rf "$DMG_TEMP"
+mkdir -p "$DMG_TEMP"
+
+# Copy app to temp folder
+cp -R "${APP_BUNDLE}" "$DMG_TEMP/"
+
+# Create symlink to Applications folder
+ln -s /Applications "$DMG_TEMP/Applications"
+
+# Create DMG
+DMG_NAME="${APP_NAME}.dmg"
+rm -f "$DMG_NAME"
+
+hdiutil create -volname "${APP_NAME}" -srcfolder "$DMG_TEMP" -ov -format UDZO "$DMG_NAME" > /dev/null
+
+# Cleanup
+rm -rf "$DMG_TEMP"
+
+# Also create ZIP as backup
+echo "🤐 Creating backup ZIP..."
 zip -r "${APP_NAME}.zip" "${APP_BUNDLE}" > /dev/null
 
 echo "✅ Build complete!"
-echo "� Output: ${OUTPUT_DIR}/${APP_NAME}.zip"
+echo "📀 DMG: ${OUTPUT_DIR}/${APP_NAME}.dmg"
+echo "🤐 ZIP: ${OUTPUT_DIR}/${APP_NAME}.zip"
 
 # Open Finder
 open .

@@ -130,6 +130,15 @@ struct MoodSelectionView: View {
         .frame(width: 500, height: 700)
         .onAppear {
             startEntranceAnimation()
+            
+            // Make window float above others
+            DispatchQueue.main.async {
+                if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.contains("mood-selection") == true }) {
+                    window.level = .floating
+                    window.orderFrontRegardless()
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+            }
         }
     }
     
