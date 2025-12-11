@@ -11,10 +11,9 @@ let package = Package(
     ],
     targets: [
         .executableTarget(
-            name: "HolyReminder",
-            resources: [
-                .process("Resources")
-            ]
+            name: "HolyReminder"
+            // Resources removed - verses are now embedded in Swift code
+            // to avoid Bundle.module crash on re-access
         )
     ]
 )

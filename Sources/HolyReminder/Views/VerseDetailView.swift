@@ -113,6 +113,20 @@ struct VerseDetailView: View {
                     closeWindow()
                 })
             }
+            
+            // Invisible button to capture Enter key safely
+            Button(action: {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showAmen = true
+                    if AppState.shared.playPrayerSound {
+                        NSSound(named: "Glass")?.play()
+                    }
+                }
+            }) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.defaultAction) // Triggers on Enter
         }
         .frame(width: 500, height: 420)
         .onAppear {
@@ -123,15 +137,10 @@ struct VerseDetailView: View {
             // Trigger line animation
             lineOffset = 120
         }
-        .background(
-            KeyEventHandler { event in
-                if event.keyCode == 36 || event.keyCode == 76 {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showAmen = true
-                    }
-                }
-            }
-        )
+// KeyEventHandler removed to eliminate potential crash source
+// struct KeyEventHandler ...
+// class KeyCaptureView ...
+    
     }
     
     private func closeWindow() {
@@ -151,75 +160,73 @@ struct VerseDetailView: View {
     }
 }
 
-// Helper to capture key events in SwiftUI
-struct KeyEventHandler: NSViewRepresentable {
-    let onKeyDown: (NSEvent) -> Void
-    
-    func makeNSView(context: Context) -> KeyCaptureView {
-        let view = KeyCaptureView()
-        view.onKeyDown = onKeyDown
-        DispatchQueue.main.async {
-            view.window?.makeFirstResponder(view)
-        }
-        return view
-    }
-    
-    func updateNSView(_ nsView: KeyCaptureView, context: Context) {
-        nsView.onKeyDown = onKeyDown
-    }
-}
-
-class KeyCaptureView: NSView {
-    var onKeyDown: ((NSEvent) -> Void)?
-    
-    override var acceptsFirstResponder: Bool { true }
-    
-    override func keyDown(with event: NSEvent) {
-        onKeyDown?(event)
-    }
-    
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        window?.makeFirstResponder(self)
-    }
-}
-
 // Window controller for showing verse detail
 class VerseDetailWindowController {
     static let shared = VerseDetailWindowController()
     private var window: NSWindow?
+    private var isClosing = false
     
     func showVerse(_ verse: BibleVerse, mood: Mood) {
-        closeWindow()
+        // If already closing, wait a bit
+        if isClosing {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.showVerse(verse, mood: mood)
+            }
+            return
+        }
+        
+        // Close existing window first
+        if let existingWindow = window {
+            print("🪟 Closing existing window")
+            existingWindow.close()
+            window = nil
+        }
         
         let contentView = VerseDetailView(verse: verse, mood: mood)
         let hostingView = NSHostingView(rootView: contentView)
         
-        let window = NSWindow(
+        let newWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 500, height: 420),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         
-        window.contentView = hostingView
-        window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
-        window.isMovableByWindowBackground = true
-        window.backgroundColor = .clear
-        window.level = .floating
-        window.hidesOnDeactivate = false
-        window.center()
+        newWindow.contentView = hostingView
+        newWindow.titlebarAppearsTransparent = true
+        newWindow.titleVisibility = .hidden
+        newWindow.isMovableByWindowBackground = true
+        newWindow.backgroundColor = .clear
+        newWindow.level = .floating
+        newWindow.hidesOnDeactivate = false
+        
+        // CRITICAL FIX: Prevent double-free crash
+        // If true (default), window releases itself on close, but we hold a strong ref
+        newWindow.isReleasedWhenClosed = false 
+        
+        newWindow.center()
         
         // Use orderFrontRegardless instead of makeKeyAndOrderFront + activate
-        window.orderFrontRegardless()
+        newWindow.orderFrontRegardless()
         
-        self.window = window
+        self.window = newWindow
+        print("🪟 New window created and shown")
     }
     
     func closeWindow() {
-        window?.close()
-        window = nil
+        guard !isClosing else { return }
+        isClosing = true
+        
+        if let existingWindow = window {
+            print("🪟 closeWindow called")
+            existingWindow.close()
+            window = nil
+        }
+        
+        // Reset closing flag after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.isClosing = false
+        }
     }
 }
 
@@ -313,6 +320,20 @@ struct PrayerDetailView: View {
                     closeWindow()
                 })
             }
+            
+            // Invisible button to capture Enter key safely
+            Button(action: {
+                withAnimation {
+                    showAmen = true
+                    if AppState.shared.playPrayerSound {
+                        NSSound(named: "Glass")?.play()
+                    }
+                }
+            }) {
+                EmptyView()
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(.defaultAction)
         }
         .frame(width: 460, height: 380)
         .onAppear {
@@ -321,15 +342,7 @@ struct PrayerDetailView: View {
                 contentOpacity = 1.0
             }
         }
-        .background(
-            KeyEventHandler { event in
-                if event.keyCode == 36 || event.keyCode == 76 {
-                    withAnimation {
-                        showAmen = true
-                    }
-                }
-            }
-        )
+        // KeyEventHandler removed
     }
     
     private func closeWindow() {
@@ -350,36 +363,64 @@ struct PrayerDetailView: View {
 class PrayerDetailWindowController {
     static let shared = PrayerDetailWindowController()
     private var window: NSWindow?
+    private var isClosing = false
     
     func showPrayer(_ reminder: PrayerReminder) {
-        closeWindow()
+        // If already closing, wait a bit
+        if isClosing {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                self?.showPrayer(reminder)
+            }
+            return
+        }
+        
+        // Close existing window first
+        if let existingWindow = window {
+            print("🪟 Closing existing prayer window")
+            existingWindow.close()
+            window = nil
+        }
         
         let contentView = PrayerDetailView(reminder: reminder)
         let hostingView = NSHostingView(rootView: contentView)
         
-        let window = NSWindow(
+        let newWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 460, height: 380),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         
-        window.contentView = hostingView
-        window.titlebarAppearsTransparent = true
-        window.titleVisibility = .hidden
-        window.isMovableByWindowBackground = true
-        window.backgroundColor = .clear
-        window.level = .floating
-        window.hidesOnDeactivate = false
-        window.center()
+        newWindow.contentView = hostingView
+        newWindow.titlebarAppearsTransparent = true
+        newWindow.titleVisibility = .hidden
+        newWindow.isMovableByWindowBackground = true
+        newWindow.backgroundColor = .clear
+        newWindow.level = .floating
+        newWindow.hidesOnDeactivate = false
         
-        window.orderFrontRegardless()
+        // CRITICAL FIX: Prevent double-free crash
+        newWindow.isReleasedWhenClosed = false
         
-        self.window = window
+        newWindow.center()
+        
+        newWindow.orderFrontRegardless()
+        
+        self.window = newWindow
     }
     
     func closeWindow() {
-        window?.close()
-        window = nil
+        guard !isClosing else { return }
+        isClosing = true
+        
+        if let existingWindow = window {
+            print("🪟 Closing prayer window (closeWindow called)")
+            existingWindow.close()
+            window = nil
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.isClosing = false
+        }
     }
 }

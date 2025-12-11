@@ -160,9 +160,25 @@ struct TutorialView: View {
     }
     
     private func openNotificationSettings() {
-        // Open System Settings > Notifications > HolyReminder
-        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
-            NSWorkspace.shared.open(url)
+        // Try multiple schemes to ensure it works across macOS versions (including future "Tahoe")
+        let schemes = [
+            // Modern macOS (Ventura/Sonoma/Tahoe?) - Extension format
+            "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=com.holyreminder.app",
+            
+            // Alternative modern format with slash
+            "x-apple.systempreferences:com.apple.Notifications-Settings.extension/com.holyreminder.app",
+            
+            // Legacy/Fallback format
+            "x-apple.systempreferences:com.apple.preference.notifications?id=com.holyreminder.app",
+            
+            // Direct path format (sometimes works)
+            "x-apple.systempreferences:com.apple.preference.notifications/com.holyreminder.app"
+        ]
+        
+        for scheme in schemes {
+            if let url = URL(string: scheme) {
+                NSWorkspace.shared.open(url)
+            }
         }
     }
     

@@ -283,13 +283,12 @@ struct MenuBarView: View {
     }
 }
 
+// Simplified MenuButton without State/Animation to avoid crashes
 struct MenuButton: View {
     let icon: String
     let title: String
     var isDestructive: Bool = false
     let action: () -> Void
-    
-    @State private var isHovered = false
     
     var body: some View {
         Button(action: action) {
@@ -306,19 +305,11 @@ struct MenuButton: View {
                 Spacer()
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isHovered ? Color(nsColor: .selectedContentBackgroundColor).opacity(0.5) : .clear)
-            )
+            .padding(.vertical, 8)
+            // Static background on hover - system handled or simple color
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isHovered = hovering
-            }
-        }
     }
 }
 

@@ -237,8 +237,9 @@ struct NotificationSettingsView: View {
             
             Section {
                 Toggle("Benachrichtigungston aktivieren", isOn: $appState.notificationSoundEnabled)
+                Toggle("Gebetssound abspielen", isOn: $appState.playPrayerSound)
             } header: {
-                Label("Ton", systemImage: "speaker.wave.2")
+                Label("Töne", systemImage: "speaker.wave.2")
             }
             
             Section {

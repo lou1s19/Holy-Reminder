@@ -32,5 +32,11 @@
     <string>NSApplication</string>
     <key>NSUserNotificationAlertStyle</key>
     <string>alert</string>
+    <key>NSSupportsAutomaticTermination</key>
+    <false/>
+    <key>NSSupportsSuddenTermination</key>
+    <false/>
+	<key>LSMultipleInstancesProhibited</key>
+	<true/>
 </dict>
 </plist>

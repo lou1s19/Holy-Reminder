@@ -20,6 +20,22 @@ class AppState: ObservableObject {
     @AppStorage("showVersePreview") var showVersePreview: Bool = true
     @AppStorage("askMoodDaily") var askMoodDaily: Bool = true
     @AppStorage("checkForUpdates") var checkForUpdates: Bool = true // New setting
+    @AppStorage("playPrayerSound") var playPrayerSound: Bool = true
+    @AppStorage("notificationStyle") var notificationStyle: NotificationStyle = .standard
+    
+    enum NotificationStyle: String, CaseIterable, Identifiable {
+        case standard = "Standard"
+        case persistent = "Persistent"
+        
+        var id: String { rawValue }
+        
+        var label: String {
+            switch self {
+            case .standard: return "Standard (Benachrichtigung)"
+            case .persistent: return "Persistent (Fenster öffnet sofort)"
+            }
+        }
+    }
     
     @Published var currentVerse: BibleVerse?
     @Published var nextReminderTime: Date?

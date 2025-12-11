@@ -147,38 +147,55 @@ class NotificationManager {
     }
     
     private func sendBibleVerseNotification() {
+        print("🔍 sendBibleVerseNotification called")
+        
         let mood = AppState.shared.selectedMood
+        print("🔍 Mood: \(mood)")
         
         guard let verse = VerseManager.shared.getRandomVerse(for: mood) else {
             print("❌ No verse found for mood: \(mood)")
             return
         }
         
+        print("🔍 Verse: \(verse.reference)")
+        
         // Update current verse in app state
         DispatchQueue.main.async {
             AppState.shared.currentVerse = verse
         }
         
+        // CHECK STYLE
+        if AppState.shared.notificationStyle == .persistent {
+            print("🪟 Persistent mode: Opening window directly")
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+                VerseDetailWindowController.shared.showVerse(verse, mood: mood)
+            }
+            return
+        }
+        
+        // STANDARD NOTIFICATION
         let content = UNMutableNotificationContent()
         content.title = "📖 \(verse.reference)"
         content.body = verse.shortText
-        content.sound = .default
+        content.sound = AppState.shared.notificationSoundEnabled ? .default : nil
         content.categoryIdentifier = "BIBLE_VERSE"
         
-        // Add full verse to userInfo for potential "Read More" action
-        content.userInfo = [
+        // Add full verse to userInfo
+        let userInfo: [String: Any] = [
             "reference": verse.reference,
             "fullText": verse.text,
             "category": verse.category
         ]
+        content.userInfo = userInfo
         
-        // Use a safe identifier
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
             content: content,
             trigger: nil // Deliver immediately
         )
         
+        print("🔍 Adding notification request...")
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("❌ Notification error: \(error)")
@@ -191,10 +208,21 @@ class NotificationManager {
     private func sendPrayerReminder() {
         let reminder = PrayerReminder.random()
         
+        // CHECK STYLE
+        if AppState.shared.notificationStyle == .persistent {
+            print("🪟 Persistent mode: Opening prayer window directly")
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+                PrayerDetailWindowController.shared.showPrayer(reminder)
+            }
+            return
+        }
+        
+        // STANDARD NOTIFICATION
         let content = UNMutableNotificationContent()
         content.title = "\(reminder.emoji) \(reminder.title)"
         content.body = reminder.message
-        content.sound = .default
+        content.sound = AppState.shared.notificationSoundEnabled ? .default : nil
         content.categoryIdentifier = "PRAYER_REMINDER"
         
         let request = UNNotificationRequest(
