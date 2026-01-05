@@ -1,6 +1,7 @@
 import SwiftUI
 import ServiceManagement
 import UserNotifications
+import Combine
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
@@ -205,6 +206,9 @@ struct GeneralSettingsView: View {
         .formStyle(.grouped)
         .onAppear {
             launchAtLogin = appState.launchAtStartup
+            checkNotificationStatus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             checkNotificationStatus()
         }
     }

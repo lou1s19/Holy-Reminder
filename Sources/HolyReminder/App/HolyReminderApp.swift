@@ -195,7 +195,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
 // Simple Logger
 func log(_ message: String) {
     print(message)
-    let logFile = URL(fileURLWithPath: "/Users/louis/Desktop/Holy-Reminder/debug.log")
+    let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
+    let logFile = desktop.appendingPathComponent("HolyReminder_debug.log")
     let timestamp = ISO8601DateFormatter().string(from: Date())
     let logEntry = "\(timestamp): \(message)\n"
     
