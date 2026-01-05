@@ -3,6 +3,7 @@ import SwiftUI
 struct MoodSelectionView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject var locManager = LocalizationManager.shared
     @State private var selectedMood: Mood?
     @State private var showContent = false
     @State private var contentOpacity: Double = 1.0
@@ -16,10 +17,10 @@ struct MoodSelectionView: View {
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
-        case 5..<12: return "Guten Morgen"
-        case 12..<17: return "Guten Tag"
-        case 17..<21: return "Guten Abend"
-        default: return "Gute Nacht"
+        case 5..<12: return L10n("greeting_morning")
+        case 12..<17: return L10n("greeting_afternoon")
+        case 17..<21: return L10n("greeting_evening")
+        default: return L10n("greeting_night")
         }
     }
     
@@ -75,7 +76,7 @@ struct MoodSelectionView: View {
                         .foregroundStyle(.white)
                         .offset(y: titleOffset)
                     
-                    Text("Wie fühlst du dich heute?")
+                    Text(L10n("mood_selection_title"))
                         .font(.system(size: 16, weight: .regular, design: .rounded))
                         .foregroundStyle(.white.opacity(0.5))
                         .offset(y: titleOffset)
@@ -131,12 +132,19 @@ struct MoodSelectionView: View {
         .onAppear {
             startEntranceAnimation()
             
-            // Make window float above others
+            // Make window float above ALL others (including Chrome, Settings, etc.)
             DispatchQueue.main.async {
-                if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.contains("mood-selection") == true }) {
-                    window.level = .floating
-                    window.orderFrontRegardless()
-                    NSApp.activate(ignoringOtherApps: true)
+                // Find any window that might contain this view
+                for window in NSApp.windows {
+                    if window.identifier?.rawValue.contains("mood-selection") == true ||
+                       window.title.contains("Stimmung") ||
+                       (window.contentViewController != nil && window.styleMask.contains(.borderless)) {
+                        window.level = .screenSaver  // Highest z-index
+                        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                        window.orderFrontRegardless()
+                        NSApp.activate(ignoringOtherApps: true)
+                        break
+                    }
                 }
             }
         }
@@ -287,7 +295,11 @@ struct AnimatedGradientBackground: View {
     }
 }
 
-#Preview {
-    MoodSelectionView()
-        .environmentObject(AppState.shared)
+#if DEBUG
+struct MoodSelectionView_Previews: PreviewProvider {
+    static var previews: some View {
+        MoodSelectionView()
+            .environmentObject(AppState.shared)
+    }
 }
+#endif

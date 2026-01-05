@@ -63,8 +63,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         if !tutorialCompleted {
             showTutorial()
         } else {
-            // Check if mood was selected today
-            checkAndShowMoodSelection()
+            // Always show mood selection on app launch
+            showMoodSelection()
         }
         
         // Start notification scheduler
@@ -99,26 +99,37 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         }
     }
     
-    private func checkAndShowMoodSelection() {
-        // Use AppState to get the date safely (handles String/Date conversion from AppStorage)
-        log("Checking mood selection...")
-        let lastMoodDate = AppState.shared.lastMoodDate
-        let calendar = Calendar.current
-        
-        // If never set or not set today, show window
-        if lastMoodDate == nil || !calendar.isDateInToday(lastMoodDate!) {
-            log("👋 Mood not set today, showing selection window")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "mood-selection" }) {
-                    window.makeKeyAndOrderFront(nil)
-                    NSApp.activate(ignoringOtherApps: true)
-                } else {
-                    // Open mood selection window
-                    NSApp.sendAction(Selector(("showMoodWindow:")), to: nil, from: nil)
-                }
+    private func showMoodSelection() {
+        log("👋 Showing mood selection window...")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            // First, try to find existing mood-selection window
+            if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.contains("mood-selection") == true }) {
+                window.level = .screenSaver  // Highest z-index to appear above everything
+                window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+                NSApp.activate(ignoringOtherApps: true)
+                log("✅ Found and activated mood-selection window")
+            } else {
+                // Window not created yet - create it manually
+                log("⚠️ Mood window not found, creating manually...")
+                let hostingController = NSHostingController(rootView: 
+                    MoodSelectionView()
+                        .environmentObject(AppState.shared)
+                )
+                let window = NSWindow(contentViewController: hostingController)
+                window.title = "Stimmung wählen"
+                window.styleMask = [.borderless, .fullSizeContentView]
+                window.isMovableByWindowBackground = true
+                window.backgroundColor = .clear
+                window.level = .screenSaver
+                window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                window.center()
+                window.makeKeyAndOrderFront(nil)
+                window.orderFrontRegardless()
+                NSApp.activate(ignoringOtherApps: true)
+                log("✅ Created and showed mood-selection window manually")
             }
-        } else {
-            log("✅ Mood already set today: \(lastMoodDateString(lastMoodDate))")
         }
     }
     
@@ -155,10 +166,25 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
                     VerseDetailWindowController.shared.showVerse(verse, mood: mood)
                 }
             } else if categoryId == "PRAYER_REMINDER" {
-                // Show a generic prayer detail
-                log("Opening Prayer Detail Window")
-                let reminder = PrayerReminder.random()
-                PrayerDetailWindowController.shared.showPrayer(reminder)
+                let mood = AppState.shared.selectedMood
+                
+                // Check if it's a spoken prayer with stored info
+                if let type = userInfo["type"] as? String, type == "spoken_prayer",
+                   let title = userInfo["title"] as? String,
+                   let text = userInfo["text"] as? String,
+                   let emoji = userInfo["emoji"] as? String,
+                   let categoryRaw = userInfo["category"] as? String,
+                   let category = SpokenPrayer.PrayerCategory(rawValue: categoryRaw) {
+                    
+                    log("Opening Spoken Prayer Detail Window")
+                    let prayer = SpokenPrayer(title: title, category: category, emoji: emoji, text: text)
+                    SpokenPrayerWindowController.shared.showPrayer(prayer, mood: mood)
+                } else {
+                    // Fallback: Get a mood-based prayer
+                    log("Opening Spoken Prayer Detail Window (fallback)")
+                    let prayer = SpokenPrayer.forMood(mood)
+                    SpokenPrayerWindowController.shared.showPrayer(prayer, mood: mood)
+                }
             }
         }
         

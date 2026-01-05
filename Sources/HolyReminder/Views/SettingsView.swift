@@ -1,15 +1,26 @@
 import SwiftUI
 import ServiceManagement
+import UserNotifications
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject var locManager = LocalizationManager.shared
     @State private var selectedTab: SettingsTab = .general
     
     enum SettingsTab: String, CaseIterable {
-        case general = "Allgemein"
-        case appearance = "Aussehen"
-        case notifications = "Erinnerungen"
-        case about = "Über"
+        case general = "general"
+        case appearance = "appearance"
+        case notifications = "notifications"
+        case about = "about"
+        
+        var title: String {
+            switch self {
+            case .general: return L10n("settings_tab_general")
+            case .appearance: return L10n("settings_tab_appearance")
+            case .notifications: return L10n("settings_tab_notifications")
+            case .about: return L10n("settings_tab_about")
+            }
+        }
         
         var icon: String {
             switch self {
@@ -26,48 +37,150 @@ struct SettingsView: View {
             GeneralSettingsView()
                 .environmentObject(appState)
                 .tabItem {
-                    Label(SettingsTab.general.rawValue, systemImage: SettingsTab.general.icon)
+                    Label(SettingsTab.general.title, systemImage: SettingsTab.general.icon)
                 }
                 .tag(SettingsTab.general)
             
             AppearanceSettingsView()
                 .environmentObject(appState)
                 .tabItem {
-                    Label(SettingsTab.appearance.rawValue, systemImage: SettingsTab.appearance.icon)
+                    Label(SettingsTab.appearance.title, systemImage: SettingsTab.appearance.icon)
                 }
                 .tag(SettingsTab.appearance)
             
             NotificationSettingsView()
                 .environmentObject(appState)
                 .tabItem {
-                    Label(SettingsTab.notifications.rawValue, systemImage: SettingsTab.notifications.icon)
+                    Label(SettingsTab.notifications.title, systemImage: SettingsTab.notifications.icon)
                 }
                 .tag(SettingsTab.notifications)
             
             AboutView()
                 .tabItem {
-                    Label(SettingsTab.about.rawValue, systemImage: SettingsTab.about.icon)
+                    Label(SettingsTab.about.title, systemImage: SettingsTab.about.icon)
                 }
                 .tag(SettingsTab.about)
         }
-        .frame(width: 500, height: 420)
+        .frame(width: 500, height: 550)
+        .onAppear {
+            // Make settings window float above other windows
+            DispatchQueue.main.async {
+                for window in NSApp.windows {
+                    if window.identifier?.rawValue.contains("Settings") == true ||
+                       window.identifier?.rawValue.contains("settings") == true ||
+                       window.title.contains("Settings") ||
+                       window.title.contains("Einstellungen") {
+                        window.level = .floating
+                        window.orderFrontRegardless()
+                        NSApp.activate(ignoringOtherApps: true)
+                        break
+                    }
+                }
+            }
+        }
     }
 }
 
 // MARK: - General Settings
 struct GeneralSettingsView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject var locManager = LocalizationManager.shared
     @State private var launchAtLogin = false
+    @State private var notificationsEnabled = false
     
     var body: some View {
         Form {
-            Section {
-                Toggle("Bei Anmeldung starten", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { newValue in
-                        setLaunchAtLogin(newValue)
+            // Important Notice Section - Notifications
+            if !notificationsEnabled {
+                Section {
+                    HStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(.orange)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L10n("warning_notifications_disabled"))
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.orange)
+                            Text(L10n("warning_notifications_desc"))
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Button(L10n("button_open")) {
+                            openNotificationSettings()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
                     }
+                    .padding(.vertical, 4)
+                } header: {
+                    Label(L10n("warning_title"), systemImage: "bell.badge")
+                }
+            }
+            
+            // Important Notice Section - Autostart
+            if !launchAtLogin {
+                Section {
+                    HStack(spacing: 12) {
+                        Image(systemName: "power.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundStyle(.blue)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(L10n("warning_autostart_title"))
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.blue)
+                            Text(L10n("warning_autostart_desc"))
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Button(L10n("button_activate")) {
+                            launchAtLogin = true
+                            setLaunchAtLogin(true)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Label(L10n("warning_recommendation"), systemImage: "lightbulb")
+                }
+            }
+            
+            Section {
+                Picker("Sprache", selection: $locManager.language) {
+                    ForEach(Language.allCases) { lang in
+                        Text(lang.displayName).tag(lang)
+                    }
+                }
             } header: {
-                Label("Systemstart", systemImage: "power")
+                Label("Sprache", systemImage: "globe")
+            }
+            
+            Section {
+                Toggle(isOn: $launchAtLogin) {
+                    HStack {
+                        Text(L10n("settings_autostart"))
+                        if launchAtLogin {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.system(size: 14))
+                        }
+                    }
+                }
+                .onChange(of: launchAtLogin) { newValue in
+                    setLaunchAtLogin(newValue)
+                }
+            } header: {
+                Label(L10n("settings_autostart_header"), systemImage: "power")
+            } footer: {
+                Text("Die App startet automatisch beim Einschalten deines Macs.")
             }
             
             Section {
@@ -92,6 +205,21 @@ struct GeneralSettingsView: View {
         .formStyle(.grouped)
         .onAppear {
             launchAtLogin = appState.launchAtStartup
+            checkNotificationStatus()
+        }
+    }
+    
+    private func checkNotificationStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                notificationsEnabled = settings.authorizationStatus == .authorized
+            }
+        }
+    }
+    
+    private func openNotificationSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
+            NSWorkspace.shared.open(url)
         }
     }
     
@@ -109,9 +237,11 @@ struct GeneralSettingsView: View {
     }
 }
 
+
 // MARK: - Appearance Settings (NEW)
 struct AppearanceSettingsView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject var locManager = LocalizationManager.shared
     
     // Available menu bar icons
     let menuBarIcons = [
@@ -152,9 +282,9 @@ struct AppearanceSettingsView: View {
                 }
                 .padding(.vertical, 8)
             } header: {
-                Label("Menüleisten-Icon", systemImage: "menubar.rectangle")
+                Label(L10n("settings_icon"), systemImage: "menubar.rectangle")
             } footer: {
-                Text("Wähle ein Icon für die Menüleiste. Änderung erfordert Neustart.")
+                Text(L10n("settings_icon_desc"))
             }
         }
         .formStyle(.grouped)
@@ -177,11 +307,12 @@ struct IconButton: View {
                     .foregroundStyle(isSelected ? .white : .primary)
                 
                 Text(name)
-                    .font(.system(size: 9))
+                    .font(.system(size: 10))
                     .foregroundStyle(isSelected ? .white : .secondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .frame(width: 70, height: 60)
+            .frame(width: 80, height: 70)
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(isSelected ? Color.accentColor : (isHovered ? Color.gray.opacity(0.15) : Color.gray.opacity(0.08)))
@@ -201,59 +332,67 @@ struct IconButton: View {
 // MARK: - Notification Settings
 struct NotificationSettingsView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject var locManager = LocalizationManager.shared
     
     var body: some View {
         Form {
             Section {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Häufigkeit")
-                        Spacer()
-                        Text(frequencyLabel)
-                            .foregroundStyle(.secondary)
-                            .font(.system(size: 12))
+                Picker(L10n("settings_interval"), selection: $appState.reminderInterval) {
+                    ForEach(AppState.ReminderInterval.allCases) { interval in
+                        Text(interval.label).tag(interval)
                     }
-                    
-                    Slider(value: $appState.reminderFrequency, in: 0...1) {
-                        EmptyView()
-                    } minimumValueLabel: {
-                        Text("Selten")
-                            .font(.system(size: 10))
-                    } maximumValueLabel: {
-                        Text("Häufig")
-                            .font(.system(size: 10))
-                    }
-                    .onChange(of: appState.reminderFrequency) { _ in
-                        NotificationManager.shared.rescheduleNotifications()
-                    }
-                    
-                    Text("Intervall: ca. \(intervalDescription)")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
+                }
+                .onChange(of: appState.reminderInterval) { _ in
+                    NotificationManager.shared.rescheduleNotifications()
                 }
             } header: {
-                Label("Erinnerungs-Frequenz", systemImage: "clock")
+                Label(L10n("settings_frequency_header"), systemImage: "clock")
+            } footer: {
+                Text(L10n("settings_frequency_footer"))
             }
             
             Section {
-                Toggle("Benachrichtigungston aktivieren", isOn: $appState.notificationSoundEnabled)
-                Toggle("Gebetssound abspielen", isOn: $appState.playPrayerSound)
+                Toggle(L10n("settings_sound_notification"), isOn: $appState.notificationSoundEnabled)
+                Toggle(L10n("settings_sound_prayer"), isOn: $appState.playPrayerSound)
             } header: {
-                Label("Töne", systemImage: "speaker.wave.2")
+                Label(L10n("settings_sounds_header"), systemImage: "speaker.wave.2")
             }
             
             Section {
-                Toggle("Gebetserinnerungen aktivieren", isOn: $appState.prayerRemindersEnabled)
+                Toggle(L10n("settings_prayers_enable"), isOn: $appState.prayerRemindersEnabled)
+                    .onChange(of: appState.prayerRemindersEnabled) { newValue in
+                        // Reset to default if disabled? Or just keep value.
+                        // For now we assume if enabled, we use the probability
+                    }
+                
+                if appState.prayerRemindersEnabled {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(L10n("settings_ratio_verse"))
+                            Spacer()
+                            Text("\(Int((1.0 - appState.prayerProbability) * 100))% / \(Int(appState.prayerProbability * 100))%")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(L10n("settings_ratio_prayer"))
+                        }
+                        
+                        Slider(value: $appState.prayerProbability, in: 0...1) {
+                            Text(L10n("settings_ratio_label"))
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
             } header: {
-                Label("Gebetserinnerungen", systemImage: "hands.clap")
+                Label(L10n("settings_prayers_header"), systemImage: "hands.clap")
             }
             
             Section {
-                Toggle("Stille Zeiten aktivieren", isOn: $appState.quietHoursEnabled)
+                Toggle(L10n("settings_quiet_hours_enable"), isOn: $appState.quietHoursEnabled)
                 
                 if appState.quietHoursEnabled {
                     HStack {
-                        Text("Von")
+                        Text(L10n("quiet_from"))
                         Picker("", selection: $appState.quietHoursStart) {
                             ForEach(0..<24, id: \.self) { hour in
                                 Text("\(hour):00").tag(hour)
@@ -261,7 +400,7 @@ struct NotificationSettingsView: View {
                         }
                         .frame(width: 80)
                         
-                        Text("bis")
+                        Text(L10n("quiet_to"))
                         
                         Picker("", selection: $appState.quietHoursEnd) {
                             ForEach(0..<24, id: \.self) { hour in
@@ -272,43 +411,20 @@ struct NotificationSettingsView: View {
                     }
                 }
             } header: {
-                Label("Stille Zeiten", systemImage: "moon")
+                Label(L10n("settings_quiet_hours_header"), systemImage: "moon")
             } footer: {
-                Text("Während der stillen Zeit werden keine Benachrichtigungen gesendet.")
+                Text(L10n("settings_quiet_hours_desc"))
             }
         }
         .formStyle(.grouped)
     }
-    
-    private var frequencyLabel: String {
-        switch appState.reminderFrequency {
-        case 0..<0.25: return "Sehr selten"
-        case 0.25..<0.5: return "Selten"
-        case 0.5..<0.75: return "Normal"
-        case 0.75...1: return "Häufig"
-        default: return "Normal"
-        }
-    }
-    
-    private var intervalDescription: String {
-        let interval = appState.getRandomInterval()
-        let minutes = Int(interval / 60)
-        if minutes < 60 {
-            return "\(minutes) Minuten"
-        } else {
-            let hours = minutes / 60
-            let remainingMinutes = minutes % 60
-            if remainingMinutes == 0 {
-                return "\(hours) Stunde\(hours > 1 ? "n" : "")"
-            }
-            return "\(hours) Std. \(remainingMinutes) Min."
-        }
-    }
 }
+
 
 // MARK: - About View
 struct AboutView: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject var locManager = LocalizationManager.shared
     
     var body: some View {
         VStack(spacing: 20) {
@@ -327,11 +443,11 @@ struct AboutView: View {
             Text("Holy Reminder")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
             
-            Text("Version 1.0.0")
+            Text("\(L10n("about_version")) 1.1.0")
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
             
-            Text("Tägliche Bibelerinnerungen für deinen Mac")
+            Text(L10n("about_desc"))
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -369,7 +485,7 @@ struct AboutView: View {
                             ProgressView()
                                 .controlSize(.small)
                         } else {
-                            Text("Nach Updates suchen")
+                            Text(L10n("button_check_update"))
                         }
                     }
                     .disabled(UpdateManager.shared.isChecking)
@@ -384,7 +500,7 @@ struct AboutView: View {
                 Divider()
                     .frame(width: 200)
                 
-                Toggle("Automatisch nach Updates suchen", isOn: $appState.checkForUpdates)
+                Toggle(L10n("settings_auto_update"), isOn: $appState.checkForUpdates)
                     .font(.system(size: 11))
                     .controlSize(.small)
                 
@@ -422,7 +538,7 @@ struct AboutView: View {
             Spacer()
                 .frame(height: 20)
             
-            Button("Daten zurücksetzen") {
+            Button(L10n("button_reset")) {
                 resetAllSettings()
             }
             .font(.system(size: 11))
@@ -445,7 +561,11 @@ struct AboutView: View {
     }
 }
 
-#Preview {
-    SettingsView()
-        .environmentObject(AppState.shared)
+#if DEBUG
+struct SettingsView_Previews: PreviewProvider {
+    static var previews: some View {
+        SettingsView()
+            .environmentObject(AppState.shared)
+    }
 }
+#endif

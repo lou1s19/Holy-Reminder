@@ -199,7 +199,11 @@ struct TutorialView: View {
     }
 }
 
-#Preview {
-    TutorialView()
-        .environmentObject(AppState.shared)
+#if DEBUG
+struct TutorialView_Previews: PreviewProvider {
+    static var previews: some View {
+        TutorialView()
+            .environmentObject(AppState.shared)
+    }
 }
+#endif

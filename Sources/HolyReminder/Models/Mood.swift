@@ -20,25 +20,11 @@ enum Mood: String, CaseIterable, Codable {
     }
     
     var title: String {
-        switch self {
-        case .joyful: return "Dankbar & Freudig"
-        case .sad: return "Traurig & Schwer"
-        case .anxious: return "Ängstlich & Gestresst"
-        case .thoughtful: return "Nachdenklich"
-        case .spiritual: return "Geistlich hungrig"
-        case .hopeful: return "Hoffnungsvoll"
-        }
+        return L10n("mood_\(self.rawValue)")
     }
     
     var description: String {
-        switch self {
-        case .joyful: return "Du wirst Lobpreis- und Dankbarkeitsverse erhalten"
-        case .sad: return "Du wirst tröstende und aufbauende Verse erhalten"
-        case .anxious: return "Du wirst Verse über Frieden und Geborgenheit erhalten"
-        case .thoughtful: return "Du wirst Weisheits- und Lebensverse erhalten"
-        case .spiritual: return "Du wirst tiefgehende geistliche Verse erhalten"
-        case .hopeful: return "Du wirst Verse über Hoffnung und Zukunft erhalten"
-        }
+        return L10n("mood_desc_\(self.rawValue)")
     }
     
     var verseCategory: String {

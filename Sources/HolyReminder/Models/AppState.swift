@@ -6,7 +6,7 @@ class AppState: ObservableObject {
     
     @AppStorage("selectedMood") var selectedMood: Mood = .joyful
     @AppStorage("lastMoodDate") var lastMoodDateString: String = ""
-    @AppStorage("reminderFrequency") var reminderFrequency: Double = 0.5 // 0 = selten, 1 = häufig
+    @AppStorage("reminderInterval") var reminderInterval: ReminderInterval = .twoHours
     @AppStorage("prayerRemindersEnabled") var prayerRemindersEnabled: Bool = true
     @AppStorage("launchAtStartup") var launchAtStartup: Bool = false
     @AppStorage("quietHoursEnabled") var quietHoursEnabled: Bool = false
@@ -22,6 +22,41 @@ class AppState: ObservableObject {
     @AppStorage("checkForUpdates") var checkForUpdates: Bool = true // New setting
     @AppStorage("playPrayerSound") var playPrayerSound: Bool = true
     @AppStorage("notificationStyle") var notificationStyle: NotificationStyle = .standard
+    @AppStorage("prayerProbability") var prayerProbability: Double = 0.3 // 30% probability for prayer vs verse
+    
+    // Reminder Interval options
+    enum ReminderInterval: String, CaseIterable, Identifiable {
+        case tenMinutes = "10min"
+        case thirtyMinutes = "30min"
+        case oneHour = "1h"
+        case twoHours = "2h"
+        case threeHours = "3h"
+        case fourHours = "4h"
+        
+        var id: String { rawValue }
+        
+        var label: String {
+            switch self {
+            case .tenMinutes: return "10 Minuten"
+            case .thirtyMinutes: return "30 Minuten"
+            case .oneHour: return "1 Stunde"
+            case .twoHours: return "2 Stunden"
+            case .threeHours: return "3 Stunden"
+            case .fourHours: return "4 Stunden"
+            }
+        }
+        
+        var seconds: TimeInterval {
+            switch self {
+            case .tenMinutes: return 10 * 60
+            case .thirtyMinutes: return 30 * 60
+            case .oneHour: return 60 * 60
+            case .twoHours: return 2 * 60 * 60
+            case .threeHours: return 3 * 60 * 60
+            case .fourHours: return 4 * 60 * 60
+            }
+        }
+    }
     
     enum NotificationStyle: String, CaseIterable, Identifiable {
         case standard = "Standard"
@@ -80,16 +115,13 @@ class AppState: ObservableObject {
         }
     }
     
-    // Calculate interval based on frequency setting
+    // Get the interval based on the selected option
+    func getInterval() -> TimeInterval {
+        return reminderInterval.seconds
+    }
+    
+    // For backwards compatibility - now just returns the fixed interval
     func getRandomInterval() -> TimeInterval {
-        // Base intervals in seconds
-        let minInterval: TimeInterval = 30 * 60  // 30 minutes
-        let maxInterval: TimeInterval = 180 * 60 // 3 hours
-        
-        // Adjust based on frequency (higher frequency = shorter intervals)
-        let adjustedMin = minInterval + (1 - reminderFrequency) * 30 * 60
-        let adjustedMax = maxInterval - reminderFrequency * 60 * 60
-        
-        return TimeInterval.random(in: adjustedMin...adjustedMax)
+        return reminderInterval.seconds
     }
 }

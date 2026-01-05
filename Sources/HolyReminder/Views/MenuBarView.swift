@@ -4,6 +4,7 @@ import UserNotifications
 struct MenuBarView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.openWindow) private var openWindow
+    @ObservedObject var locManager = LocalizationManager.shared
     @State private var isHoveringVerse = false
     @State private var notificationsEnabled = true
     
@@ -56,7 +57,7 @@ struct MenuBarView: View {
                             .font(.system(size: 12))
                             .foregroundStyle(.orange)
                         
-                        Text("Mitteilungen aktivieren")
+                        Text(L10n("menu_activate_notifications"))
                             .font(.system(size: 12, weight: .medium, design: .rounded))
                             .foregroundStyle(.primary)
                         
@@ -79,7 +80,7 @@ struct MenuBarView: View {
             if let verse = appState.currentVerse {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("📖 Aktueller Vers")
+                        Text(L10n("menu_verse_title"))
                             .font(.system(size: 11, weight: .medium, design: .rounded))
                             .foregroundStyle(.secondary)
                         
@@ -91,7 +92,7 @@ struct MenuBarView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .help("Vers kopieren")
+                        .help(L10n("menu_copy_help"))
                     }
                     
                     Text(verse.reference)
@@ -117,7 +118,7 @@ struct MenuBarView: View {
                     }
                 }
             } else {
-                Text("Noch kein Vers empfangen")
+                Text(L10n("menu_no_verse"))
                     .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 16)
@@ -131,7 +132,7 @@ struct MenuBarView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     
-                    Text("Nächste Erinnerung: \(formatTime(nextTime))")
+                    Text("\(L10n("menu_next_reminder")) \(formatTime(nextTime))")
                         .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
@@ -146,7 +147,7 @@ struct MenuBarView: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.orange)
                     
-                    Text("Erinnerungen pausiert")
+                    Text(L10n("menu_paused"))
                         .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(.orange)
                 }
@@ -158,11 +159,15 @@ struct MenuBarView: View {
             
             // Action buttons
             VStack(spacing: 0) {
-                MenuButton(icon: "face.smiling", title: "Stimmung ändern") {
+                MenuButton(icon: "face.smiling", title: L10n("menu_mood")) {
                     openWindow(id: "mood-selection")
                 }
                 
-                MenuButton(icon: "arrow.triangle.2.circlepath", title: "Jetzt erinnern") {
+                MenuButton(icon: "hands.clap.fill", title: L10n("menu_prayers")) {
+                    PrayerWindowController.shared.showPrayers()
+                }
+                
+                MenuButton(icon: "arrow.triangle.2.circlepath", title: L10n("menu_remind_now")) {
                     NotificationManager.shared.sendTestNotification()
                 }
                 
@@ -173,7 +178,7 @@ struct MenuBarView: View {
                 // Pause toggle
                 MenuButton(
                     icon: appState.isPaused ? "play.fill" : "pause.fill",
-                    title: appState.isPaused ? "Fortsetzen" : "Pausieren"
+                    title: appState.isPaused ? L10n("menu_resume") : L10n("menu_pause_action")
                 ) {
                     appState.isPaused.toggle()
                     if appState.isPaused {
@@ -191,7 +196,7 @@ struct MenuBarView: View {
                                 .foregroundStyle(.primary)
                                 .frame(width: 20)
                             
-                            Text("Einstellungen...")
+                            Text(L10n("menu_settings"))
                                 .font(.system(size: 13, design: .rounded))
                             
                             Spacer()
@@ -201,10 +206,36 @@ struct MenuBarView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .simultaneousGesture(TapGesture().onEnded {
+                        // Make settings window float above others after it opens
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            for window in NSApp.windows {
+                                if window.identifier?.rawValue.contains("Settings") == true ||
+                                   window.identifier?.rawValue.contains("settings") == true ||
+                                   window.title.contains("Settings") ||
+                                   window.title.contains("Einstellungen") {
+                                    window.level = .floating
+                                    window.orderFrontRegardless()
+                                    NSApp.activate(ignoringOtherApps: true)
+                                    break
+                                }
+                            }
+                        }
+                    })
                 } else {
-                    MenuButton(icon: "gear", title: "Einstellungen...") {
+                    MenuButton(icon: "gear", title: L10n("menu_settings")) {
                         NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
-                        NSApp.activate(ignoringOtherApps: true)
+                        // Make settings window float above others
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            for window in NSApp.windows {
+                                if window.title.contains("Settings") || window.title.contains("Einstellungen") {
+                                    window.level = .floating
+                                    window.orderFrontRegardless()
+                                    NSApp.activate(ignoringOtherApps: true)
+                                    break
+                                }
+                            }
+                        }
                     }
                 }
                 
@@ -220,7 +251,7 @@ struct MenuBarView: View {
                             .foregroundStyle(.pink.opacity(0.5))
                             .frame(width: 20)
                         
-                        Text("Unterstützen")
+                        Text(L10n("menu_support"))
                             .font(.system(size: 13, design: .rounded))
                             .foregroundStyle(.secondary)
                         
@@ -232,7 +263,7 @@ struct MenuBarView: View {
                 }
                 .buttonStyle(.plain)
                 
-                MenuButton(icon: "power", title: "Beenden", isDestructive: true) {
+                MenuButton(icon: "power", title: L10n("menu_quit"), isDestructive: true) {
                     NSApplication.shared.terminate(nil)
                 }
             }
@@ -313,7 +344,11 @@ struct MenuButton: View {
     }
 }
 
-#Preview {
-    MenuBarView()
-        .environmentObject(AppState.shared)
+#if DEBUG
+struct MenuBarView_Previews: PreviewProvider {
+    static var previews: some View {
+        MenuBarView()
+            .environmentObject(AppState.shared)
+    }
 }
+#endif

@@ -134,7 +134,7 @@ class NotificationManager {
         }
         
         // Decide between Bible verse or prayer reminder
-        let shouldSendPrayerReminder = appState.prayerRemindersEnabled && Bool.random()
+        let shouldSendPrayerReminder = appState.prayerRemindersEnabled && Double.random(in: 0...1) < appState.prayerProbability
         
         if shouldSendPrayerReminder {
             sendPrayerReminder()
@@ -206,24 +206,34 @@ class NotificationManager {
     }
     
     private func sendPrayerReminder() {
-        let reminder = PrayerReminder.random()
+        let mood = AppState.shared.selectedMood
+        let prayer = SpokenPrayer.forMood(mood)
         
         // CHECK STYLE
         if AppState.shared.notificationStyle == .persistent {
-            print("🪟 Persistent mode: Opening prayer window directly")
+            print("🪟 Persistent mode: Opening spoken prayer window directly")
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)
-                PrayerDetailWindowController.shared.showPrayer(reminder)
+                SpokenPrayerWindowController.shared.showPrayer(prayer, mood: mood)
             }
             return
         }
         
         // STANDARD NOTIFICATION
         let content = UNMutableNotificationContent()
-        content.title = "\(reminder.emoji) \(reminder.title)"
-        content.body = reminder.message
+        content.title = "\(prayer.emoji) Zeit zum Beten"
+        content.body = "\(prayer.title) - Tippe zum Mitsprechen"
         content.sound = AppState.shared.notificationSoundEnabled ? .default : nil
         content.categoryIdentifier = "PRAYER_REMINDER"
+        
+        // Store prayer info for when user taps
+        content.userInfo = [
+            "type": "spoken_prayer",
+            "title": prayer.title,
+            "text": prayer.text,
+            "emoji": prayer.emoji,
+            "category": prayer.category.rawValue
+        ]
         
         let request = UNNotificationRequest(
             identifier: UUID().uuidString,
@@ -235,7 +245,7 @@ class NotificationManager {
             if let error = error {
                 print("❌ Notification error: \(error)")
             } else {
-                print("🙏 Prayer reminder sent: \(reminder.title)")
+                print("🙏 Prayer reminder sent: \(prayer.title)")
             }
         }
     }
