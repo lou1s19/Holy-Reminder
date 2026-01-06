@@ -78,14 +78,14 @@ cp "Sources/HolyReminder/Resources/verses.json" "$RESOURCE_BUNDLE/"
 # A common trick for SPM apps is to create the bundle structure inside Resources.
 
 # 6. Sign the App
-echo "🔐 Signing App Bundle skipped (relying on binary signature)..."
-# xattr -cr "${OUTPUT_DIR}/${APP_BUNDLE}"
-# codesign --force --deep --sign - "${OUTPUT_DIR}/${APP_BUNDLE}"
+echo "🔐 Signing App Bundle..."
+xattr -cr "${OUTPUT_DIR}/${APP_BUNDLE}"
+codesign --force --deep --sign - "${OUTPUT_DIR}/${APP_BUNDLE}"
 
-# if [ $? -ne 0 ]; then
-#     echo "❌ Code signing failed."
-#     exit 1
-# fi
+if [ $? -ne 0 ]; then
+    echo "❌ Code signing failed."
+    exit 1
+fi
 
 # 7. Create DMG
 echo "📀 Creating DMG..."

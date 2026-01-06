@@ -147,17 +147,17 @@ class NotificationManager {
     }
     
     private func sendBibleVerseNotification() {
-        print("🔍 sendBibleVerseNotification called")
+        log("🔍 sendBibleVerseNotification called")
         
         let mood = AppState.shared.selectedMood
-        print("🔍 Mood: \(mood)")
+        log("🔍 Mood: \(mood)")
         
         guard let verse = VerseManager.shared.getRandomVerse(for: mood) else {
-            print("❌ No verse found for mood: \(mood)")
+            log("❌ No verse found for mood: \(mood)")
             return
         }
         
-        print("🔍 Verse: \(verse.reference)")
+        log("🔍 Verse: \(verse.reference)")
         
         // Update current verse in app state
         DispatchQueue.main.async {
@@ -166,7 +166,7 @@ class NotificationManager {
         
         // CHECK STYLE
         if AppState.shared.notificationStyle == .persistent {
-            print("🪟 Persistent mode: Opening window directly")
+            log("🪟 Persistent mode: Opening window directly")
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)
                 VerseDetailWindowController.shared.showVerse(verse, mood: mood)
@@ -195,12 +195,12 @@ class NotificationManager {
             trigger: nil // Deliver immediately
         )
         
-        print("🔍 Adding notification request...")
+        log("🔍 Adding notification request...")
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
-                print("❌ Notification error: \(error)")
+                log("❌ Notification error: \(error)")
             } else {
-                print("📖 Bible verse notification sent: \(verse.reference)")
+                log("📖 Bible verse notification sent: \(verse.reference)")
             }
         }
     }

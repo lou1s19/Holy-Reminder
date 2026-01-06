@@ -51,7 +51,14 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
         // Request notification permissions
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
-                print("✅ Notification permissions granted")
+                log("✅ Notification permissions granted")
+            } else {
+                log("❌ Notification permissions denied. Error: \(error?.localizedDescription ?? "none")")
+            }
+            
+            // Also check current status
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                log("📋 Notification status: \(settings.authorizationStatus.rawValue) (0=notDetermined, 1=denied, 2=authorized, 3=provisional)")
             }
         }
         
