@@ -199,23 +199,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     }
 }
 
-// Simple Logger
+// Simple Logger (console only for production)
 func log(_ message: String) {
+    #if DEBUG
     print(message)
-    let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first!
-    let logFile = desktop.appendingPathComponent("HolyReminder_debug.log")
-    let timestamp = ISO8601DateFormatter().string(from: Date())
-    let logEntry = "\(timestamp): \(message)\n"
-    
-    if let data = logEntry.data(using: .utf8) {
-        if FileManager.default.fileExists(atPath: logFile.path) {
-            if let fileHandle = try? FileHandle(forWritingTo: logFile) {
-                fileHandle.seekToEndOfFile()
-                fileHandle.write(data)
-                fileHandle.closeFile()
-            }
-        } else {
-            try? data.write(to: logFile)
-        }
-    }
+    #endif
 }
